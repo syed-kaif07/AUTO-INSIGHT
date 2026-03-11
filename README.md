@@ -4,16 +4,17 @@
 
 ### Autonomous Multi-Agent Analytics Platform
 
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-18+-61DAFB?style=flat-square&logo=react&logoColor=black)](https://reactjs.org)
+[![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Python%203.12+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![Supabase](https://img.shields.io/badge/Supabase-Database%20%26%20Storage-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com)
+[![LangGraph](https://img.shields.io/badge/LangGraph-Agent%20Orchestration-FF6B35?style=flat-square)](https://langchain-ai.github.io/langgraph)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Active%20Development-brightgreen?style=flat-square)]()
 
-**AutoInsight** automates the complete data analysis lifecycle — from raw dataset ingestion to production-ready insight reports — using a coordinated pipeline of specialized AI agents.
+**AutoInsight** automates the complete data science workflow — from raw dataset ingestion to machine learning predictions and structured reports — using a coordinated pipeline of specialized AI agents.
 
-[Documentation](#) · [Demo](#demo) · [Report an Issue](issues) · [Request a Feature](issues)
+[Documentation](#) · [Demo](#-demo) · [Report an Issue](issues) · [Request a Feature](issues)
 
 </div>
 
@@ -54,7 +55,7 @@ The gap between raw data and actionable intelligence remains one of the most per
 
 **AutoInsight** is an AI-powered multi-agent analytics platform that collapses the full analytics workflow — cleaning, exploration, modeling, and reporting — into a single automated pipeline.
 
-Upload a dataset. AutoInsight deploys a coordinated team of specialized AI agents that analyze your data end-to-end, select the best-fit machine learning model, generate predictions, and produce a structured insight report — all without requiring manual intervention.
+Upload a dataset. AutoInsight deploys a coordinated team of specialized AI agents built on **LangGraph** that process your data end-to-end, train the best-fit machine learning model, generate predictions, and produce a structured downloadable report — all without manual intervention.
 
 Think of it as a **senior data science team, running at API speed**.
 
@@ -64,100 +65,89 @@ Think of it as a **senior data science team, running at API speed**.
 
 | Feature | Description |
 |---|---|
-| 🤖 **Multi-Agent Orchestration** | Specialized agents for each stage of the analytics pipeline, coordinated by a central orchestrator |
-| 🧹 **Automated Data Cleaning** | Missing value imputation, outlier detection, type inference, and normalization |
-| 📊 **Autonomous EDA** | Statistical profiling, distribution analysis, correlation mapping, and anomaly flagging |
-| 🧠 **Intelligent Model Selection** | Benchmarks multiple ML models and selects the optimal algorithm for the dataset's characteristics |
-| 🔮 **Prediction Generation** | End-to-end model training and inference with confidence scoring |
-| 📝 **LLM-Powered Insight Reports** | Natural language summaries of findings, patterns, and recommended actions |
-| 📈 **Interactive Dashboard** | Real-time visualization of all pipeline outputs via a responsive React frontend |
-| 🔌 **REST API-First** | All platform capabilities exposed through a versioned FastAPI interface |
+| 📂 **Dataset Upload** | Upload CSV, Excel, or JSON files up to 500MB directly via Supabase Storage |
+| 🤖 **Multi-Agent Pipeline** | LangGraph-orchestrated agents for each workflow stage — cleaning, EDA, prediction, and reporting |
+| 🧹 **Automated Data Cleaning** | Missing value handling, duplicate removal, type coercion, and outlier detection |
+| 📊 **Autonomous EDA** | Statistical profiling, distribution analysis, correlation mapping, and anomaly flagging with interactive Plotly charts |
+| 🔮 **Predictive Modeling** | Automatic model training and prediction generation using Scikit-learn, XGBoost, and LightGBM |
+| 📝 **Automated Reports** | Structured downloadable reports with charts, metrics, and summaries |
+| 🔭 **Agent Monitoring** | Real-time pipeline status page showing each agent's live progress and state |
+| 🔐 **Authentication** | Email login and OAuth via Google and GitHub using Auth.js (NextAuth v5) |
 
 ---
 
 ## 🏗 System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         AutoInsight Platform                    │
-│                                                                 │
-│  ┌──────────────┐    REST API     ┌─────────────────────────┐   │
-│  │   React UI   │◄───────────────►│   FastAPI Gateway       │   │
-│  │  (Frontend)  │                 │   /api/v1               │   │
-│  └──────────────┘                 └────────────┬────────────┘   │
-│                                                │                │
-│                                   ┌────────────▼────────────┐   │
-│                                   │  Orchestration Engine   │   │
-│                                   │  (Agent Coordinator)    │   │
-│                                   └────────────┬────────────┘   │
-│                                                │                │
-│              ┌─────────────────────────────────┼──────────────┐ │
-│              │         Agent Pipeline           │              │ │
-│              │                                 │              │ │
-│   ┌──────────▼──────┐  ┌──────────────┐  ┌────▼──────────┐   │ │
-│   │ Ingestion Agent │→ │Cleaning Agent│→ │   EDA Agent   │   │ │
-│   └─────────────────┘  └──────────────┘  └───────┬───────┘   │ │
-│                                                   │           │ │
-│   ┌──────────────────┐  ┌─────────────┐  ┌───────▼───────┐   │ │
-│   │  Report Agent    │← │ Pred. Agent │← │ ML Sel. Agent │   │ │
-│   └──────────────────┘  └─────────────┘  └───────────────┘   │ │
-│              │                                                 │ │
-│              └─────────────────────────────────────────────────┘ │
-│                              │                                  │
-│                   ┌──────────▼──────────┐                       │
-│                   │   Storage Layer      │                       │
-│                   │  PostgreSQL / S3     │                       │
-│                   └─────────────────────┘                       │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                        AutoInsight Platform                          │
+│                                                                      │
+│  ┌──────────────────────┐   Auth.js    ┌──────────────────────────┐ │
+│  │    Next.js 15 App    │◄────────────►│  Google / GitHub OAuth   │ │
+│  │  (Frontend + SSR)    │              └──────────────────────────┘ │
+│  └───────────┬──────────┘                                           │
+│              │  REST API                                             │
+│  ┌───────────▼──────────┐                                           │
+│  │   FastAPI Backend    │                                           │
+│  │   (Python 3.12+)     │                                           │
+│  └───────────┬──────────┘                                           │
+│              │                                                       │
+│  ┌───────────▼──────────────────────────────────────────┐          │
+│  │             LangGraph Agent Pipeline                  │          │
+│  │                                                       │          │
+│  │  [Ingestion] → [Cleaning] → [EDA] →                  │          │
+│  │  [Prediction] → [Reporting]                           │          │
+│  └───────────┬──────────────────────────────────────────┘          │
+│              │                                                       │
+│  ┌───────────┴──────────────────────────────┐                       │
+│  │                 Supabase                  │                       │
+│  │  ┌──────────────────┐  ┌───────────────┐ │                       │
+│  │  │  PostgreSQL DB    │  │ File Storage  │ │                       │
+│  │  │  (users, jobs,    │  │ (datasets,    │ │                       │
+│  │  │  results, logs)   │  │  reports)     │ │                       │
+│  │  └──────────────────┘  └───────────────┘ │                       │
+│  └───────────────────────────────────────────┘                       │
+│                                                                      │
+│  Deployment:  Frontend → Vercel  |  Backend → Render                │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 🤖 AI Agent Workflow
 
-Each agent is a self-contained module with a defined input contract, processing logic, and output schema. Agents communicate through a shared state object managed by the orchestrator.
+AutoInsight uses **LangGraph** to orchestrate a deterministic multi-agent pipeline. Each agent is a node in the graph with a defined input contract, processing logic, and output schema. Agents execute sequentially, passing shared state between each stage.
 
 ```
-User Upload Dataset
-        │
-        ▼
-┌───────────────────┐
-│  Ingestion Agent  │  →  Schema inference, format detection, metadata extraction
-└────────┬──────────┘
-         │
-         ▼
-┌───────────────────┐
-│  Cleaning Agent   │  →  Null handling, outlier removal, type coercion, deduplication
-└────────┬──────────┘
-         │
-         ▼
-┌───────────────────┐
-│    EDA Agent      │  →  Distributions, correlations, statistical summaries, anomalies
-└────────┬──────────┘
-         │
-         ▼
-┌───────────────────┐
-│ ML Selection      │  →  Algorithm benchmarking, cross-validation, metric evaluation
-│ Agent             │
-└────────┬──────────┘
-         │
-         ▼
-┌───────────────────┐
-│ Prediction Agent  │  →  Model training, inference, confidence intervals
-└────────┬──────────┘
-         │
-         ▼
-┌───────────────────┐
-│  Insight Agent    │  →  LLM-generated natural language interpretation of findings
-└────────┬──────────┘
-         │
-         ▼
-┌───────────────────┐
-│  Report Generator │  →  Structured PDF/JSON reports with charts, tables, and narratives
-└────────┬──────────┘
-         │
-         ▼
-  Dashboard Output
+User Uploads Dataset (CSV / Excel / JSON → Supabase Storage)
+                │
+                ▼
+┌───────────────────────┐
+│    Ingestion Agent    │  →  File validation, schema inference, metadata extraction
+└──────────┬────────────┘
+           │
+           ▼
+┌───────────────────────┐
+│    Cleaning Agent     │  →  Null handling, duplicate removal, type coercion, outlier detection
+└──────────┬────────────┘
+           │
+           ▼
+┌───────────────────────┐
+│      EDA Agent        │  →  Statistical summaries, distributions, correlation heatmaps (Plotly)
+└──────────┬────────────┘
+           │
+           ▼
+┌───────────────────────┐
+│   Prediction Agent    │  →  Model training (Scikit-learn / XGBoost / LightGBM), inference
+└──────────┬────────────┘
+           │
+           ▼
+┌───────────────────────┐
+│   Reporting Agent     │  →  Compiles charts, metrics, and summaries → downloadable report
+└──────────┬────────────┘
+           │
+           ▼
+    Dashboard + Report Download
 ```
 
 ---
@@ -165,43 +155,43 @@ User Upload Dataset
 ## 🛠 Tech Stack
 
 ### Frontend
-| Technology | Purpose |
-|---|---|
-| React 18 | Component-based UI framework |
-| TypeScript 5 | Type-safe application logic |
-| Vite | Next-generation frontend build tooling |
-| TailwindCSS | Utility-first styling system |
-| Recharts / D3.js | Data visualization and charting |
-| React Query | Async state and server-side data management |
-| Zustand | Lightweight global state management |
+| Technology | Version | Purpose |
+|---|---|---|
+| Next.js | 15 | SSR framework with App Router and server components |
+| React | 19 | UI component library |
+| TypeScript | 5.0+ | Static typing and developer tooling |
+| Tailwind CSS | v4 | Utility-first styling |
+| ShadCN UI | Latest | Accessible, production-ready dashboard components |
+| Auth.js (NextAuth) | v5 | Email login + Google and GitHub OAuth |
 
 ### Backend
-| Technology | Purpose |
-|---|---|
-| Python 3.11+ | Core runtime |
-| FastAPI | High-performance async REST framework |
-| Pandas / NumPy | Data manipulation and numerical computing |
-| Scikit-learn | ML model library and evaluation utilities |
-| SQLAlchemy | ORM and database abstraction layer |
-| Celery + Redis | Distributed task queue for async agent execution |
-| Pydantic v2 | Schema validation and settings management |
+| Technology | Version | Purpose |
+|---|---|---|
+| Python | 3.12+ | Core runtime |
+| FastAPI | Latest | High-performance async REST API with auto OpenAPI docs |
+| Pandas | 2.x | Dataset manipulation and transformation |
+| NumPy | Latest | Numerical computing |
+| PyArrow | Latest | Efficient columnar data processing |
+| Scikit-learn | Latest | ML model training and evaluation |
+| XGBoost | Latest | Gradient boosted tree models |
+| LightGBM | Latest | Fast gradient boosting |
 
-### AI / Machine Learning
+### AI / Agent Orchestration
 | Technology | Purpose |
 |---|---|
-| OpenAI / Anthropic API | LLM backbone for insight generation and report narration |
-| LangChain | Agent orchestration and chain-of-thought reasoning |
-| AutoML (TPOT / AutoSklearn) | Automated model search and hyperparameter tuning |
-| SHAP | Explainable AI and feature importance attribution |
+| LangGraph | Deterministic multi-agent pipeline orchestration |
+| Plotly | Interactive charts embedded in the dashboard |
+| Matplotlib | Static chart generation for downloadable PDF reports |
 
-### Infrastructure
+### Infrastructure & Storage
 | Technology | Purpose |
 |---|---|
-| Docker + Docker Compose | Containerized local development and deployment |
-| PostgreSQL | Persistent data storage for jobs and results |
-| AWS S3 / MinIO | Object storage for uploaded datasets and reports |
-| GitHub Actions | CI/CD pipeline for testing and deployment |
-| Nginx | Reverse proxy and static asset serving |
+| Supabase PostgreSQL | Primary database — user accounts, dataset metadata, agent logs, analytics results |
+| Supabase Storage | File storage — uploaded datasets and generated reports (up to 500MB) |
+| Vercel | Frontend hosting with edge deployment |
+| Render | Backend API hosting |
+| Docker | Containerized local development |
+| GitHub Actions | CI/CD pipeline |
 
 ---
 
@@ -210,103 +200,84 @@ User Upload Dataset
 ```
 AUTO-INSIGHT/
 │
-├── backend/
+├── frontend/                          # Next.js 15 application
+│   ├── app/
+│   │   ├── (auth)/
+│   │   │   ├── login/                 # Login page
+│   │   │   └── register/              # Registration page
+│   │   ├── dashboard/                 # Main analytics dashboard
+│   │   ├── upload/                    # Dataset upload page
+│   │   ├── analysis/                  # EDA charts and outputs
+│   │   ├── predictions/               # ML results and metrics
+│   │   ├── reports/                   # Report viewer and download
+│   │   ├── agents/                    # Agent pipeline monitoring
+│   │   ├── about/                     # About page
+│   │   ├── layout.tsx                 # Root layout
+│   │   └── page.tsx                   # Landing page
+│   │
+│   ├── components/
+│   │   ├── ui/                        # ShadCN base components
+│   │   ├── Upload/                    # File upload components
+│   │   ├── Pipeline/                  # Agent monitoring UI
+│   │   ├── Charts/                    # Plotly chart wrappers
+│   │   ├── Report/                    # Report viewer components
+│   │   └── common/                    # Shared layout components
+│   │
+│   ├── lib/
+│   │   ├── auth.ts                    # Auth.js configuration
+│   │   ├── supabase.ts                # Supabase client
+│   │   └── api.ts                     # Backend API client
+│   │
+│   ├── hooks/                         # Custom React hooks
+│   ├── types/                         # TypeScript interfaces
+│   ├── public/                        # Static assets
+│   ├── tailwind.config.ts
+│   ├── next.config.ts
+│   └── README.md
+│
+├── backend/                           # FastAPI application
 │   ├── agents/
-│   │   ├── ingestion_agent.py       # Dataset parsing and schema inference
-│   │   ├── cleaning_agent.py        # Data quality and preprocessing
-│   │   ├── eda_agent.py             # Exploratory data analysis
-│   │   ├── ml_selection_agent.py    # Model benchmarking and selection
-│   │   ├── prediction_agent.py      # Model training and inference
-│   │   ├── insight_agent.py         # LLM-powered insight generation
-│   │   └── report_agent.py          # Report compilation and formatting
+│   │   ├── ingestion_agent.py
+│   │   ├── cleaning_agent.py
+│   │   ├── eda_agent.py
+│   │   ├── prediction_agent.py
+│   │   └── reporting_agent.py
 │   │
 │   ├── pipelines/
-│   │   ├── orchestrator.py          # Central agent coordinator
-│   │   ├── pipeline_config.py       # Pipeline stage definitions
-│   │   └── state_manager.py         # Shared agent state and context
-│   │
-│   ├── services/
-│   │   ├── llm_service.py           # LLM client abstraction
-│   │   ├── storage_service.py       # S3/MinIO operations
-│   │   ├── job_service.py           # Background job lifecycle
-│   │   └── notification_service.py  # Webhook and event dispatching
+│   │   ├── graph.py                   # LangGraph pipeline definition
+│   │   ├── state.py                   # Shared agent state schema
+│   │   └── orchestrator.py
 │   │
 │   ├── api/
-│   │   ├── v1/
-│   │   │   ├── datasets.py          # Dataset upload and management endpoints
-│   │   │   ├── jobs.py              # Pipeline job endpoints
-│   │   │   ├── reports.py           # Report retrieval endpoints
-│   │   │   └── health.py            # System health check
-│   │   └── middleware/
-│   │       ├── auth.py              # JWT authentication middleware
-│   │       └── rate_limit.py        # API rate limiting
+│   │   ├── main.py
+│   │   └── v1/
+│   │       ├── datasets.py
+│   │       ├── jobs.py
+│   │       ├── reports.py
+│   │       └── health.py
+│   │
+│   ├── services/
+│   │   ├── supabase_service.py        # Supabase DB + Storage client
+│   │   └── job_service.py
 │   │
 │   ├── utils/
-│   │   ├── logger.py                # Structured logging
-│   │   ├── validators.py            # Input validation helpers
-│   │   └── metrics.py              # Prometheus metrics collection
-│   │
 │   ├── tests/
-│   │   ├── unit/
-│   │   └── integration/
-│   │
 │   ├── Dockerfile
 │   ├── requirements.txt
 │   └── README.md
 │
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Upload/              # Dataset upload flow
-│   │   │   ├── Pipeline/            # Agent pipeline status tracker
-│   │   │   ├── Charts/              # EDA and prediction visualizations
-│   │   │   ├── Report/              # Report viewer components
-│   │   │   └── common/              # Shared UI components
-│   │   │
-│   │   ├── pages/
-│   │   │   ├── Dashboard.tsx        # Main analytics dashboard
-│   │   │   ├── Upload.tsx           # Dataset upload page
-│   │   │   ├── Jobs.tsx             # Job history and status
-│   │   │   └── Report.tsx           # Report detail view
-│   │   │
-│   │   ├── services/
-│   │   │   ├── api.ts               # Axios API client
-│   │   │   ├── jobs.ts              # Job management API calls
-│   │   │   └── datasets.ts          # Dataset API calls
-│   │   │
-│   │   ├── hooks/
-│   │   │   ├── useJob.ts            # Job polling and status hooks
-│   │   │   ├── useDataset.ts        # Dataset management hooks
-│   │   │   └── usePipeline.ts       # Pipeline progress hooks
-│   │   │
-│   │   └── store/
-│   │       └── index.ts             # Zustand global state
-│   │
-│   ├── public/
-│   ├── Dockerfile
-│   ├── package.json
-│   ├── vite.config.ts
-│   ├── tailwind.config.ts
-│   └── README.md
-│
 ├── docs/
 │   ├── architecture.png
-│   ├── workflow.png
-│   ├── api-reference.md
-│   └── agent-specs.md
+│   └── workflow.png
 │
 ├── docker/
-│   ├── docker-compose.yml
-│   ├── docker-compose.dev.yml
-│   └── nginx.conf
+│   └── docker-compose.yml
 │
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml
-│       └── deploy.yml
+│       └── ci.yml
 │
 ├── .env.example
-├── Makefile
 └── README.md
 ```
 
@@ -316,15 +287,15 @@ AUTO-INSIGHT/
 
 ### Prerequisites
 
-- Docker & Docker Compose 2.x
 - Node.js 20+ and npm 9+
-- Python 3.11+
-- An OpenAI or Anthropic API key
+- Python 3.12+
+- A [Supabase](https://supabase.com) project (free tier works)
+- Docker (optional)
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/auto-insight.git
+git clone https://github.com/your-username/auto-insight.git
 cd auto-insight
 ```
 
@@ -334,81 +305,80 @@ cd auto-insight
 cp .env.example .env
 ```
 
-Edit `.env` with your credentials:
+Edit `.env`:
 
 ```env
-# LLM Configuration
-OPENAI_API_KEY=your_openai_api_key
-ANTHROPIC_API_KEY=your_anthropic_api_key
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-# Database
-DATABASE_URL=postgresql://autoinsight:password@db:5432/autoinsight
+# Auth.js
+NEXTAUTH_SECRET=your-nextauth-secret
+NEXTAUTH_URL=http://localhost:3000
 
-# Storage
-AWS_ACCESS_KEY_ID=your_key
-AWS_SECRET_ACCESS_KEY=your_secret
-S3_BUCKET=autoinsight-datasets
+# OAuth Providers
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
 
-# Redis
-REDIS_URL=redis://redis:6379/0
+# Backend
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-### 3. Start the Full Stack
+### 3. Frontend
 
-```bash
-docker compose -f docker/docker-compose.yml up --build
-```
-
-The platform will be available at:
-
-| Service | URL |
-|---|---|
-| Frontend | http://localhost:3000 |
-| Backend API | http://localhost:8000 |
-| API Docs | http://localhost:8000/docs |
-| Flower (task monitor) | http://localhost:5555 |
-
-### 4. Local Development (without Docker)
-
-**Backend:**
-```bash
-cd backend
-python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-uvicorn api.main:app --reload --port 8000
-```
-
-**Frontend:**
 ```bash
 cd frontend
 npm install
 npm run dev
+# Available at http://localhost:3000
+```
+
+### 4. Backend
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate        # Linux/macOS
+# .\venv\Scripts\activate       # Windows
+
+pip install -r requirements.txt
+uvicorn api.main:app --reload --port 8000
+# API at http://localhost:8000
+# Docs at http://localhost:8000/docs
+```
+
+### 5. Docker (Full Stack)
+
+```bash
+docker compose -f docker/docker-compose.yml up --build
 ```
 
 ---
 
 ## 🚀 Usage Guide
 
-### Via the Web Interface
+### Web Interface
 
-1. Navigate to `http://localhost:3000`
-2. Click **Upload Dataset** and select a CSV, Excel, or JSON file
-3. Configure optional pipeline settings (target column, task type)
-4. Click **Run Analysis** — the pipeline begins immediately
-5. Monitor progress in real time on the **Jobs** page
-6. View the full report and interactive charts on the **Dashboard**
+1. Go to `http://localhost:3000` and sign in with email, Google, or GitHub
+2. Navigate to **Upload** — drag and drop a CSV, Excel, or JSON file (up to 500MB)
+3. Preview your dataset and configure the target column and task type
+4. Click **Run AutoInsight** — the LangGraph pipeline starts immediately
+5. Monitor each agent's progress on the **Agent Monitor** page
+6. View EDA charts on the **Analysis** page and ML results on the **Predictions** page
+7. Download your full report from the **Reports** page
 
-### Via the REST API
-
-**Upload a dataset and trigger analysis:**
+### REST API
 
 ```bash
-# Upload dataset
+# Upload a dataset
 curl -X POST http://localhost:8000/api/v1/datasets \
   -H "Authorization: Bearer $TOKEN" \
-  -F "file=@my_data.csv"
+  -F "file=@sales_data.csv"
 
-# Start analysis pipeline
+# Start pipeline
 curl -X POST http://localhost:8000/api/v1/jobs \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
@@ -418,7 +388,7 @@ curl -X POST http://localhost:8000/api/v1/jobs \
 curl http://localhost:8000/api/v1/jobs/job_xyz456 \
   -H "Authorization: Bearer $TOKEN"
 
-# Retrieve generated report
+# Download report
 curl http://localhost:8000/api/v1/reports/job_xyz456 \
   -H "Authorization: Bearer $TOKEN"
 ```
@@ -427,139 +397,115 @@ curl http://localhost:8000/api/v1/reports/job_xyz456 \
 
 ## 🎬 Demo
 
-### Typical Analysis Workflow
-
 ```
-Step 1 — Upload
-  User uploads a CSV dataset (e.g., sales_data_2024.csv, 50,000 rows)
+Step 1 — Sign In
+  User authenticates via Google OAuth
 
-Step 2 — Ingestion Agent
-  Detects schema, infers column types, identifies target variable
-  → Output: Validated dataset schema + metadata summary
+Step 2 — Upload
+  User uploads sales_data_2024.csv (50,000 rows)
+  File stored directly in Supabase Storage
 
-Step 3 — Cleaning Agent
-  Handles 3.2% missing values via median imputation
-  Removes 47 duplicate rows, flags 12 outlier records
-  → Output: Clean, analysis-ready DataFrame
+Step 3 — Ingestion Agent
+  Schema inferred, column types detected, metadata saved to Supabase DB
 
-Step 4 — EDA Agent
-  Generates 24 statistical summaries, 8 correlation heatmaps
-  Detects strong positive correlation between ad_spend and revenue (r=0.87)
-  → Output: EDA report with visualizations
+Step 4 — Cleaning Agent
+  Handles 3.2% missing values, removes 47 duplicate rows, flags 12 outliers
 
-Step 5 — ML Selection Agent
-  Benchmarks 8 algorithms (Linear Regression, Random Forest, XGBoost, etc.)
-  Selects XGBoost Regressor (RMSE: 1,243 | R²: 0.91)
-  → Output: Model leaderboard + winning model artifact
+Step 5 — EDA Agent
+  Generates interactive Plotly charts: distributions, correlations, anomalies
+  Detects strong correlation between ad_spend and revenue (r=0.87)
 
 Step 6 — Prediction Agent
-  Trains final model on full cleaned dataset
-  Generates predictions with 95% confidence intervals
-  → Output: Prediction results + SHAP feature importance
+  Benchmarks Scikit-learn, XGBoost, LightGBM
+  Selects XGBoost Regressor (RMSE: 1,243 | R²: 0.91)
 
-Step 7 — Insight Agent
-  LLM synthesizes: "Revenue is most strongly driven by ad_spend and
-  region, with Q4 showing a consistent 34% seasonal uplift..."
-  → Output: Natural language insight narrative
+Step 7 — Reporting Agent
+  Compiles EDA charts + model metrics into a structured PDF report
+  Available for download on the Reports page
 
-Step 8 — Report Generator
-  Compiles full PDF report: EDA charts, model performance, predictions,
-  and executive summary — ready for stakeholder distribution
-  → Output: autoinsight_report_2024-03-11.pdf
+Total pipeline runtime for 50K rows: ~4 minutes
 ```
-
-**Total pipeline runtime for 50K rows: ~4 minutes**
 
 ---
 
 ## 🗺 Roadmap
 
 ### Phase 1 — Core Pipeline ✅
-- Dataset ingestion with multi-format support (CSV, Excel, JSON, Parquet)
-- Automated EDA with statistical profiling
-- REST API foundation and authentication
+- Dataset upload via Supabase Storage
+- FastAPI backend with LangGraph agent graph
+- Ingestion and cleaning agents
 
-### Phase 2 — Multi-Agent Orchestration 🔄 *(In Progress)*
-- LangChain-based agent orchestration
-- Shared state management between agents
-- Async pipeline execution via Celery
+### Phase 2 — Analysis & Prediction 🔄 *(In Progress)*
+- EDA agent with Plotly visualizations
+- Prediction agent with Scikit-learn / XGBoost / LightGBM
+- Analysis and Predictions pages in Next.js
 
-### Phase 3 — ML Model Selection ⏳
-- Algorithm benchmarking suite (10+ models)
-- Cross-validation and hyperparameter search
-- AutoML integration (TPOT / AutoSklearn)
+### Phase 3 — Reporting & Monitoring ⏳
+- PDF report generation with Matplotlib
+- Agent monitoring page with live pipeline status
+- Report storage and download via Supabase
 
-### Phase 4 — Insight Generation ⏳
-- LLM-powered natural language interpretation
-- Context-aware anomaly and trend narration
-- Explainable AI with SHAP integration
+### Phase 4 — Auth & User Accounts ⏳
+- Auth.js with email, Google, and GitHub login
+- User-scoped dataset and job history
 
-### Phase 5 — Report Automation ⏳
-- PDF and HTML report generation
-- Executive summary auto-drafting
-- Scheduled report delivery via email/webhook
+### Phase 5 — Production Deployment ⏳
+- Frontend → Vercel
+- Backend → Render
+- CI/CD via GitHub Actions
 
-### Phase 6 — SaaS Deployment ⏳
-- Multi-tenant architecture with organization support
-- Usage-based billing via Stripe
-- Enterprise SSO (SAML / OAuth2)
-- Kubernetes deployment with horizontal autoscaling
+### Phase 6 — SaaS Features ⏳
+- Multi-tenant organization support
+- Natural language data querying
+- Usage-based billing
 
 ---
 
 ## 🔮 Future Improvements
 
-- **Real-time streaming pipelines** — Support for streaming data sources (Kafka, Kinesis) with continuous insight generation
-- **Conversational analytics interface** — Chat-based data exploration via an embedded LLM agent
-- **Custom agent plugins** — SDK for defining and registering domain-specific analysis agents
-- **Federated data connectors** — Native integrations with Snowflake, BigQuery, Redshift, and Databricks
-- **Agent memory and learning** — Persistent agent memory so pipelines improve with usage over time
+- **Natural language queries** — Ask questions about your dataset in plain English via an AI-assisted query interface
+- **Additional data connectors** — Native integrations with Google Sheets, Notion, and REST APIs
+- **WebSocket pipeline updates** — Real-time agent progress without polling
+- **Cloudflare R2 storage** — Alternative object storage backend for high-volume usage
+- **Custom agent plugins** — SDK for registering domain-specific agents into the pipeline
 - **Model registry** — Version-controlled model storage with drift detection and retraining triggers
-- **Collaborative workspaces** — Shared team dashboards with role-based access control
+- **Collaborative workspaces** — Shared dashboards with team roles and access control
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions from the community. Please read the guidelines below before opening a pull request.
-
-### Getting Started
-
 ```bash
-# Fork and clone the repository
+# Fork and clone
 git clone https://github.com/your-username/auto-insight.git
 
 # Create a feature branch
-git checkout -b feature/your-feature-name
+git checkout -b feat/your-feature-name
 
-# Make your changes and run tests
-cd backend && pytest tests/
+# Make changes, then run tests
+cd backend && pytest
 cd frontend && npm run test
 
-# Submit a pull request
+# Commit using Conventional Commits
+git commit -m "feat: add EDA agent correlation heatmap"
+
+# Push and open a pull request
+git push origin feat/your-feature-name
 ```
 
-### Contribution Standards
+### Standards
 
-- **Code style:** Python code must pass `ruff` linting; TypeScript must pass `eslint`
-- **Tests:** All new features require unit tests with ≥80% coverage
-- **Commits:** Follow [Conventional Commits](https://www.conventionalcommits.org/) format
-- **Documentation:** Update relevant README sections and inline docstrings
-
-### Reporting Issues
-
-Please use [GitHub Issues](issues) and include:
-- Environment details (OS, Python/Node version, Docker version)
-- Steps to reproduce
-- Expected vs actual behavior
-- Relevant logs or screenshots
+- Python: `ruff` linting + type hints required
+- TypeScript: `eslint` + no `any` types
+- All new features require tests
+- Follow [Conventional Commits](https://www.conventionalcommits.org/) format
 
 ---
 
 <div align="center">
 
-Built with ⚙️ precision by the AutoInsight Engineering Team
+Built with ⚙️ precision · AutoInsight Engineering
 
-[Website](#) · [Documentation](#) · [LinkedIn](#) · [Twitter](#)
+[Documentation](#) · [Issues](issues) · [Discussions](#)
 
 </div>

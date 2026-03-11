@@ -1,12 +1,11 @@
 # AutoInsight — Backend Service
 
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Celery](https://img.shields.io/badge/Celery-5.3+-37814A?style=flat-square&logo=celery&logoColor=white)](https://docs.celeryq.dev)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-336791?style=flat-square&logo=postgresql&logoColor=white)](https://postgresql.org)
-[![Redis](https://img.shields.io/badge/Redis-7+-DC382D?style=flat-square&logo=redis&logoColor=white)](https://redis.io)
+[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Latest-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![LangGraph](https://img.shields.io/badge/LangGraph-Agent%20Orchestration-FF6B35?style=flat-square)](https://langchain-ai.github.io/langgraph)
+[![Supabase](https://img.shields.io/badge/Supabase-DB%20%26%20Storage-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com)
 
-The AutoInsight backend is a Python-based asynchronous service that powers the multi-agent analytics pipeline. It exposes a versioned REST API, orchestrates agent execution, and manages the full lifecycle of data analysis jobs.
+The AutoInsight backend is a Python 3.12 FastAPI service that powers the multi-agent analytics pipeline. It exposes a versioned REST API, orchestrates LangGraph agent execution, and manages all data processing, machine learning, and report generation workflows.
 
 ---
 
@@ -27,80 +26,80 @@ The AutoInsight backend is a Python-based asynchronous service that powers the m
 
 ## Overview
 
-The backend is designed as a stateless API layer over a distributed task execution system. When a user submits a dataset for analysis, the API creates a job record, pushes the pipeline to a Celery task queue, and returns a job ID. Agents execute asynchronously in isolated worker processes, writing results to shared storage as each stage completes.
+The backend is a stateless API service built on FastAPI with asynchronous request handling. When a user submits a dataset for analysis, the API creates a job record in Supabase, retrieves the file from Supabase Storage, and executes the LangGraph pipeline. Each agent runs sequentially as a node in the graph, writing results back to Supabase as each stage completes.
 
-The system is built for horizontal scalability — additional Celery workers can be added without modifying any application code.
+File uploads never pass through the backend server directly — files are stored in **Supabase Storage** and referenced by URL, keeping the API lightweight and the storage layer independently scalable.
 
 ---
 
 ## Responsibilities
 
-The backend service is responsible for:
-
-- **API Gateway** — Accepting and validating all client requests via a versioned FastAPI router
-- **Job Orchestration** — Scheduling, monitoring, and managing the state of analysis pipeline jobs
-- **Agent Execution** — Running the ordered sequence of AI agents with fault isolation between stages
-- **LLM Integration** — Interfacing with OpenAI / Anthropic APIs for insight and report generation
-- **Data Storage** — Persisting cleaned datasets, model artifacts, and analysis results
-- **Report Generation** — Compiling structured PDF and JSON reports from pipeline outputs
-- **Authentication** — Issuing and validating JWT tokens for all API requests
+- **API Gateway** — Accepting and validating all client requests via a versioned FastAPI router with auto-generated OpenAPI docs
+- **Agent Orchestration** — Running the LangGraph pipeline graph for each analysis job
+- **Data Processing** — Executing cleaning, EDA, and prediction logic using Pandas, Scikit-learn, and related libraries
+- **Storage Integration** — Reading datasets from and writing reports to Supabase Storage
+- **Database Integration** — Persisting job state, agent logs, analysis results, and report metadata in Supabase PostgreSQL
+- **Report Generation** — Compiling Plotly charts and model metrics into downloadable PDF reports using Matplotlib
 
 ---
 
 ## Agent System
 
-The agent system is the core of AutoInsight. Each agent is an independent Python class that implements a standard `run(state: PipelineState) -> PipelineState` interface, allowing agents to be composed, swapped, or extended without coupling.
+The agent system is built on **LangGraph**, which models the pipeline as a directed graph where each node is a specialized agent. Agents share a typed state object (`PipelineState`) that is passed and updated at each stage.
 
-### Agent Contracts
+### Agent Pipeline Graph
 
 ```python
-from abc import ABC, abstractmethod
-from models.state import PipelineState
+# pipelines/graph.py
+from langgraph.graph import StateGraph
+from agents import IngestionAgent, CleaningAgent, EDAAgent, PredictionAgent, ReportingAgent
+from pipelines.state import PipelineState
 
-class BaseAgent(ABC):
-    """All agents implement this interface."""
+graph = StateGraph(PipelineState)
 
-    @abstractmethod
-    def run(self, state: PipelineState) -> PipelineState:
-        """Execute the agent's logic and return the updated state."""
-        ...
+graph.add_node("ingestion",  IngestionAgent().run)
+graph.add_node("cleaning",   CleaningAgent().run)
+graph.add_node("eda",        EDAAgent().run)
+graph.add_node("prediction", PredictionAgent().run)
+graph.add_node("reporting",  ReportingAgent().run)
 
-    @abstractmethod
-    def validate_input(self, state: PipelineState) -> bool:
-        """Verify required state fields exist before execution."""
-        ...
+graph.set_entry_point("ingestion")
+graph.add_edge("ingestion",  "cleaning")
+graph.add_edge("cleaning",   "eda")
+graph.add_edge("eda",        "prediction")
+graph.add_edge("prediction", "reporting")
+
+pipeline = graph.compile()
 ```
 
 ### Agent Descriptions
 
-| Agent | Module | Responsibility |
+| Agent | File | Responsibility |
 |---|---|---|
-| **Ingestion Agent** | `agents/ingestion_agent.py` | Parses uploaded files (CSV, Excel, JSON, Parquet), infers column types, extracts dataset metadata, and validates schema integrity |
-| **Cleaning Agent** | `agents/cleaning_agent.py` | Identifies and handles missing values, removes duplicate records, detects and treats outliers, and normalizes numeric distributions |
-| **EDA Agent** | `agents/eda_agent.py` | Computes descriptive statistics, generates correlation matrices, performs distribution analysis, and flags anomalous patterns |
-| **ML Selection Agent** | `agents/ml_selection_agent.py` | Benchmarks multiple scikit-learn algorithms against the dataset using cross-validation, selects the best-performing model based on task type (classification/regression) |
-| **Prediction Agent** | `agents/prediction_agent.py` | Trains the selected model on the full cleaned dataset, generates predictions and confidence intervals, and computes SHAP feature importances |
-| **Insight Agent** | `agents/insight_agent.py` | Uses an LLM to generate natural language interpretations of EDA findings, model performance, and key patterns in the data |
-| **Report Agent** | `agents/report_agent.py` | Assembles all pipeline outputs into a structured, stakeholder-ready PDF and JSON report |
+| **Ingestion Agent** | `agents/ingestion_agent.py` | Retrieves file from Supabase Storage, parses CSV/Excel/JSON, infers column types, extracts dataset metadata |
+| **Cleaning Agent** | `agents/cleaning_agent.py` | Handles missing values, removes duplicates, coerces data types, detects and treats outliers |
+| **EDA Agent** | `agents/eda_agent.py` | Computes descriptive statistics, correlation matrices, distribution analysis; generates Plotly chart configs |
+| **Prediction Agent** | `agents/prediction_agent.py` | Trains and benchmarks Scikit-learn, XGBoost, and LightGBM models; selects best performer; generates predictions |
+| **Reporting Agent** | `agents/reporting_agent.py` | Assembles all pipeline outputs into a structured PDF report using Matplotlib; uploads report to Supabase Storage |
 
-### Orchestrator
-
-The `Orchestrator` class in `pipelines/orchestrator.py` manages agent sequencing, error recovery, and pipeline state throughout execution.
+### Shared Pipeline State
 
 ```python
-from pipelines.orchestrator import Orchestrator
+# pipelines/state.py
+from dataclasses import dataclass, field
+from typing import Any
 
-pipeline = Orchestrator(agents=[
-    IngestionAgent(),
-    CleaningAgent(),
-    EDAAgent(),
-    MLSelectionAgent(),
-    PredictionAgent(),
-    InsightAgent(),
-    ReportAgent(),
-])
-
-result = pipeline.run(job_id="job_abc123", dataset_path="s3://bucket/data.csv")
+@dataclass
+class PipelineState:
+    job_id: str
+    dataset_url: str                   # Supabase Storage URL
+    raw_df: Any = None                 # Original DataFrame
+    clean_df: Any = None               # Post-cleaning DataFrame
+    eda_results: dict = field(default_factory=dict)
+    model_results: dict = field(default_factory=dict)
+    report_url: str = ""               # Supabase Storage URL of final report
+    current_stage: str = "ingestion"
+    errors: list = field(default_factory=list)
 ```
 
 ---
@@ -109,20 +108,20 @@ result = pipeline.run(job_id="job_abc123", dataset_path="s3://bucket/data.csv")
 
 | Layer | Technology | Version |
 |---|---|---|
-| Runtime | Python | 3.11+ |
-| API Framework | FastAPI | 0.110+ |
-| Data Processing | Pandas | 2.0+ |
-| Numerical Computing | NumPy | 1.26+ |
-| Machine Learning | Scikit-learn | 1.4+ |
-| Explainability | SHAP | 0.44+ |
-| Agent Orchestration | LangChain | 0.1+ |
-| LLM Client | OpenAI / Anthropic SDK | Latest |
-| Task Queue | Celery | 5.3+ |
-| Message Broker | Redis | 7+ |
-| ORM | SQLAlchemy | 2.0+ |
-| Database | PostgreSQL | 15+ |
-| Schema Validation | Pydantic v2 | 2.5+ |
-| Object Storage | boto3 (S3/MinIO) | 1.34+ |
+| Runtime | Python | 3.12+ |
+| API Framework | FastAPI | Latest |
+| API Docs | Swagger / OpenAPI | Auto-generated |
+| Agent Orchestration | LangGraph | Latest |
+| Data Processing | Pandas | 2.x |
+| Numerical Computing | NumPy | Latest |
+| Columnar Processing | PyArrow | Latest |
+| Machine Learning | Scikit-learn | Latest |
+| Gradient Boosting | XGBoost | Latest |
+| Gradient Boosting | LightGBM | Latest |
+| Interactive Charts | Plotly | Latest |
+| Static Charts / PDF | Matplotlib | Latest |
+| Schema Validation | Pydantic v2 | 2.x |
+| Database + Storage | Supabase | Latest |
 | Testing | pytest | 7.4+ |
 | Code Quality | ruff, mypy | Latest |
 
@@ -135,69 +134,56 @@ backend/
 │
 ├── agents/
 │   ├── __init__.py
-│   ├── base_agent.py            # Abstract base class for all agents
-│   ├── ingestion_agent.py       # File parsing and schema inference
-│   ├── cleaning_agent.py        # Data quality and preprocessing
-│   ├── eda_agent.py             # Statistical analysis and profiling
-│   ├── ml_selection_agent.py    # Algorithm benchmarking and selection
-│   ├── prediction_agent.py      # Model training and inference
-│   ├── insight_agent.py         # LLM-powered narrative generation
-│   └── report_agent.py          # Report compilation and export
+│   ├── base_agent.py              # Abstract base class for all agents
+│   ├── ingestion_agent.py         # File retrieval and schema inference
+│   ├── cleaning_agent.py          # Data quality and preprocessing
+│   ├── eda_agent.py               # Statistical analysis and Plotly chart generation
+│   ├── prediction_agent.py        # Model training, benchmarking, and inference
+│   └── reporting_agent.py         # PDF report compilation and Supabase upload
 │
 ├── pipelines/
 │   ├── __init__.py
-│   ├── orchestrator.py          # Agent pipeline coordinator
-│   ├── pipeline_config.py       # Stage definitions and ordering
-│   ├── state_manager.py         # Shared pipeline state management
-│   └── tasks.py                 # Celery task definitions
-│
-├── services/
-│   ├── __init__.py
-│   ├── llm_service.py           # Abstracted LLM client (OpenAI/Anthropic)
-│   ├── storage_service.py       # S3/MinIO upload/download operations
-│   ├── job_service.py           # Job lifecycle and status management
-│   └── notification_service.py  # Webhook and event dispatching
+│   ├── graph.py                   # LangGraph pipeline definition and compilation
+│   ├── state.py                   # PipelineState dataclass (shared agent context)
+│   └── orchestrator.py            # Pipeline execution entry point
 │
 ├── api/
 │   ├── __init__.py
-│   ├── main.py                  # FastAPI application factory
-│   ├── dependencies.py          # Shared dependency injection
-│   ├── v1/
-│   │   ├── __init__.py
-│   │   ├── datasets.py          # Dataset CRUD endpoints
-│   │   ├── jobs.py              # Pipeline job endpoints
-│   │   ├── reports.py           # Report retrieval endpoints
-│   │   └── health.py            # Health and readiness checks
-│   └── middleware/
-│       ├── auth.py              # JWT authentication
-│       ├── rate_limit.py        # Request rate limiting
-│       └── logging.py           # Structured request logging
+│   ├── main.py                    # FastAPI app factory and router registration
+│   ├── dependencies.py            # Shared dependency injection
+│   └── v1/
+│       ├── __init__.py
+│       ├── datasets.py            # Dataset upload and management endpoints
+│       ├── jobs.py                # Pipeline job creation and status endpoints
+│       ├── reports.py             # Report retrieval and download endpoints
+│       └── health.py              # Health and readiness check
+│
+├── services/
+│   ├── __init__.py
+│   ├── supabase_service.py        # Supabase DB queries and Storage operations
+│   └── job_service.py             # Job lifecycle and status management
 │
 ├── models/
 │   ├── __init__.py
-│   ├── state.py                 # PipelineState dataclass
-│   ├── job.py                   # Job ORM model
-│   ├── dataset.py               # Dataset ORM model
-│   └── report.py                # Report ORM model
+│   ├── job.py                     # Job Pydantic model
+│   ├── dataset.py                 # Dataset Pydantic model
+│   └── report.py                  # Report Pydantic model
 │
 ├── utils/
 │   ├── __init__.py
-│   ├── logger.py                # Structured logging with structlog
-│   ├── validators.py            # Input validation helpers
-│   ├── converters.py            # Data format conversion utilities
-│   └── metrics.py               # Prometheus metrics instrumentation
+│   ├── logger.py                  # Structured logging
+│   └── validators.py              # Input validation helpers
 │
 ├── tests/
 │   ├── unit/
 │   │   ├── test_cleaning_agent.py
 │   │   ├── test_eda_agent.py
-│   │   └── test_ml_selection_agent.py
+│   │   └── test_prediction_agent.py
 │   ├── integration/
 │   │   ├── test_pipeline.py
 │   │   └── test_api_endpoints.py
 │   └── conftest.py
 │
-├── alembic/                     # Database migration scripts
 ├── Dockerfile
 ├── requirements.txt
 ├── requirements-dev.txt
@@ -211,10 +197,8 @@ backend/
 
 ### Prerequisites
 
-- Python 3.11+
-- PostgreSQL 15+
-- Redis 7+
-- An OpenAI or Anthropic API key
+- Python 3.12+
+- A [Supabase](https://supabase.com) project with a Storage bucket named `datasets`
 
 ### 1. Create Virtual Environment
 
@@ -230,7 +214,7 @@ source venv/bin/activate          # Linux/macOS
 ```bash
 pip install -r requirements.txt
 
-# For development (includes linting, testing tools)
+# For development (linting and testing tools)
 pip install -r requirements-dev.txt
 ```
 
@@ -243,91 +227,63 @@ cp ../.env.example .env
 Required variables:
 
 ```env
-# Application
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# App
 APP_ENV=development
 SECRET_KEY=your-secret-key-min-32-chars
 
-# Database
-DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/autoinsight
-
-# Redis
-REDIS_URL=redis://localhost:6379/0
-
-# LLM
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-
 # Storage
-S3_BUCKET=autoinsight-datasets
-S3_ENDPOINT_URL=http://localhost:9000   # For local MinIO
-AWS_ACCESS_KEY_ID=minioadmin
-AWS_SECRET_ACCESS_KEY=minioadmin
-```
-
-### 4. Initialize Database
-
-```bash
-# Run migrations
-alembic upgrade head
-
-# (Optional) Seed with sample data
-python scripts/seed_db.py
+SUPABASE_STORAGE_BUCKET=datasets
 ```
 
 ---
 
 ## Running the Backend
 
-### API Server
+### Development Server
 
 ```bash
-# Development (with hot reload)
 uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-# Production
+### Production
+
+```bash
 uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
-### Celery Worker (required for pipeline execution)
-
-```bash
-# Start a worker with 4 concurrent processes
-celery -A pipelines.tasks worker --concurrency=4 --loglevel=info
-
-# Start Flower (task monitoring UI)
-celery -A pipelines.tasks flower --port=5555
-```
-
-### Via Docker Compose
+### Via Docker
 
 ```bash
 # From project root
-docker compose -f docker/docker-compose.yml up backend worker --build
+docker compose -f docker/docker-compose.yml up backend --build
 ```
 
-The API will be available at `http://localhost:8000`.  
-Interactive API documentation: `http://localhost:8000/docs`
+- API: `http://localhost:8000`
+- Interactive Docs: `http://localhost:8000/docs`
+- OpenAPI Schema: `http://localhost:8000/openapi.json`
 
 ---
 
 ## API Reference
 
-### Core Endpoints
-
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/v1/datasets` | Upload a dataset file |
-| `GET` | `/api/v1/datasets` | List all uploaded datasets |
-| `DELETE` | `/api/v1/datasets/{id}` | Delete a dataset |
-| `POST` | `/api/v1/jobs` | Start an analysis pipeline job |
-| `GET` | `/api/v1/jobs` | List all jobs |
-| `GET` | `/api/v1/jobs/{id}` | Get job status and progress |
+| `POST` | `/api/v1/datasets` | Upload a dataset file to Supabase Storage |
+| `GET` | `/api/v1/datasets` | List all uploaded datasets for the current user |
+| `DELETE` | `/api/v1/datasets/{id}` | Delete a dataset and its Storage file |
+| `POST` | `/api/v1/jobs` | Start a new LangGraph analysis pipeline job |
+| `GET` | `/api/v1/jobs` | List all jobs for the current user |
+| `GET` | `/api/v1/jobs/{id}` | Get job status, current stage, and progress |
 | `DELETE` | `/api/v1/jobs/{id}` | Cancel a running job |
-| `GET` | `/api/v1/reports/{job_id}` | Retrieve the generated report |
-| `GET` | `/api/v1/reports/{job_id}/pdf` | Download report as PDF |
+| `GET` | `/api/v1/reports/{job_id}` | Retrieve the generated report metadata |
+| `GET` | `/api/v1/reports/{job_id}/download` | Download the report PDF from Supabase Storage |
 | `GET` | `/api/v1/health` | Health and readiness check |
 
-Full OpenAPI spec is auto-generated and available at `/docs` when the server is running.
+Full interactive documentation is available at `/docs` when the server is running.
 
 ---
 
@@ -337,14 +293,14 @@ Full OpenAPI spec is auto-generated and available at `/docs` when the server is 
 # Run all tests
 pytest
 
-# Run with coverage report
+# With coverage report
 pytest --cov=. --cov-report=html
 
-# Run only unit tests
-pytest tests/unit/
+# Unit tests only
+pytest tests/unit/ -v
 
-# Run specific test file
-pytest tests/unit/test_cleaning_agent.py -v
+# Integration tests only
+pytest tests/integration/ -v
 ```
 
 ---
@@ -353,16 +309,10 @@ pytest tests/unit/test_cleaning_agent.py -v
 
 | Variable | Required | Description |
 |---|---|---|
+| `SUPABASE_URL` | Yes | Your Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key for server-side access |
+| `SUPABASE_STORAGE_BUCKET` | Yes | Storage bucket name for dataset files |
 | `APP_ENV` | Yes | `development`, `staging`, or `production` |
-| `SECRET_KEY` | Yes | JWT signing key (min 32 characters) |
-| `DATABASE_URL` | Yes | PostgreSQL async connection string |
-| `REDIS_URL` | Yes | Redis connection string |
-| `OPENAI_API_KEY` | Yes* | OpenAI API key (*or Anthropic) |
-| `ANTHROPIC_API_KEY` | Yes* | Anthropic API key (*or OpenAI) |
-| `S3_BUCKET` | Yes | Object storage bucket name |
-| `AWS_ACCESS_KEY_ID` | Yes | S3/MinIO access key |
-| `AWS_SECRET_ACCESS_KEY` | Yes | S3/MinIO secret key |
-| `S3_ENDPOINT_URL` | No | Override for local MinIO |
-| `MAX_UPLOAD_SIZE_MB` | No | Maximum dataset upload size (default: 500) |
-| `CELERY_CONCURRENCY` | No | Worker process count (default: 4) |
+| `SECRET_KEY` | Yes | JWT/session signing key (min 32 chars) |
+| `MAX_UPLOAD_SIZE_MB` | No | Maximum file size accepted (default: `500`) |
 | `LOG_LEVEL` | No | Logging level (default: `INFO`) |
