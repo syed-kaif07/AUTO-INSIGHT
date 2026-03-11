@@ -1,48 +1,69 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
-import DashboardLayout from './layouts/DashboardLayout';
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import PageTransition from "@/components/PageTransition";
 
-import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
-import DashboardHome from './pages/DashboardHome';
-import DataSourcesPage from './pages/DataSourcesPage';
-import AnalysisPage from './pages/AnalysisPage';
-import PredictionsPage from './pages/PredictionsPage';
-import ReportsPage from './pages/ReportsPage';
-import AgentMonitoringPage from './pages/AgentMonitoringPage';
-import AboutPage from './pages/AboutPage';
+import Landing from "./pages/Landing";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import DashboardLayout from "./components/DashboardLayout";
+import DashboardHome from "./pages/dashboard/DashboardHome";
+import DataSources from "./pages/dashboard/DataSources";
+import Analysis from "./pages/dashboard/Analysis";
+import Predictions from "./pages/dashboard/Predictions";
+import Reports from "./pages/dashboard/Reports";
+import AgentMonitoring from "./pages/dashboard/AgentMonitoring";
+import About from "./pages/dashboard/About";
+import Account from "./pages/dashboard/Account";
+import NotFound from "./pages/NotFound";
 
-export default function App() {
+const queryClient = new QueryClient();
+
+const AnimatedRoutes = () => {
+  const location = useLocation();
+  // Only animate top-level route changes (not dashboard sub-routes, handled by DashboardLayout)
+  const topKey = location.pathname.startsWith('/dashboard') ? '/dashboard' : location.pathname;
+
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-
-          {/* Protected Dashboard Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<DashboardHome />} />
-            <Route path="data-sources" element={<DataSourcesPage />} />
-            <Route path="analysis" element={<AnalysisPage />} />
-            <Route path="predictions" element={<PredictionsPage />} />
-            <Route path="reports" element={<ReportsPage />} />
-            <Route path="agent-monitoring" element={<AgentMonitoringPage />} />
-            <Route path="about" element={<AboutPage />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={topKey}>
+        <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
+        <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+        <Route path="/signup" element={<PageTransition><Signup /></PageTransition>} />
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+          <Route index element={<DashboardHome />} />
+          <Route path="data-sources" element={<DataSources />} />
+          <Route path="analysis" element={<Analysis />} />
+          <Route path="predictions" element={<Predictions />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="agent-monitoring" element={<AgentMonitoring />} />
+          <Route path="about" element={<About />} />
+          <Route path="account" element={<Account />} />
+        </Route>
+        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+      </Routes>
+    </AnimatePresence>
   );
-}
+};
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      
+      <BrowserRouter>
+        <AuthProvider>
+          <AnimatedRoutes />
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;
