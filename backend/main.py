@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from core.config import settings
-from api.routes import auth
+from api.routes import auth, reports
 
 app = FastAPI(
     title="AutoInsight API",
@@ -27,6 +27,7 @@ app.add_middleware(
 # ─── Routers ────────────────────────────────────────────────────────────────
 
 app.include_router(auth.router)
+app.include_router(reports.router)
 
 # ─── Health Check ───────────────────────────────────────────────────────────
 
