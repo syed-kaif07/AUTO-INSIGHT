@@ -1,8 +1,15 @@
+venv/
 backend/venv/
 backend/__pycache__/
 backend/.env
 Frontend/node_modules/
+frontend/node_modules/
+node_modules/
 *.pyc
 __pycache__/
 .DS_Store
 Thumbs.db
+.env
+
+# Personal notes — not for version control
+docs/

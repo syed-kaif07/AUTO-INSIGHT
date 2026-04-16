@@ -6,15 +6,18 @@ interface ShimmerButtonProps {
   className?: string;
   onClick?: () => void;
   type?: 'button' | 'submit';
+  disabled?: boolean;
 }
 
-const ShimmerButton = ({ children, className, onClick, type = 'button' }: ShimmerButtonProps) => (
+const ShimmerButton = ({ children, className, onClick, type = 'button', disabled = false }: ShimmerButtonProps) => (
   <button
     type={type}
     onClick={onClick}
+    disabled={disabled}
     className={cn(
       'group relative inline-flex items-center justify-center overflow-hidden rounded-xl px-7 py-3.5 font-semibold text-white',
       'bg-gradient-to-r from-primary to-accent',
+      disabled && 'opacity-50 cursor-not-allowed',
       className
     )}
     style={{ willChange: 'transform', transform: 'translateZ(0)', transition: 'transform 0.3s ease' }}
