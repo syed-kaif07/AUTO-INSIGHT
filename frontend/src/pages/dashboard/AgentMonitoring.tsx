@@ -1,43 +1,18 @@
-import { useState } from 'react';
-import { CheckCircle, Loader2, Clock, ChevronDown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { CheckCircle, Loader2, Clock, ChevronDown, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MagicCard from '@/components/magicui/MagicCard';
 import BorderBeam from '@/components/magicui/BorderBeam';
 import BlurFade from '@/components/magicui/BlurFade';
 
-const agents = [
-  {
-    id: 1, name: 'Data Collection Agent', status: 'completed', progress: 100,
-    logs: [
-      { time: '10:00:01', msg: 'Started data collection process' },
-      { time: '10:00:03', msg: 'Validated file format: CSV' },
-      { time: '10:00:05', msg: 'Dataset loaded: 15,420 rows × 12 columns' },
-      { time: '10:00:06', msg: 'Data collection completed successfully' },
-    ],
-  },
-  {
-    id: 2, name: 'Data Cleaning Agent', status: 'completed', progress: 100,
-    logs: [
-      { time: '10:00:07', msg: 'Starting data cleaning pipeline' },
-      { time: '10:00:12', msg: 'Handled 342 missing values using mean imputation' },
-      { time: '10:00:15', msg: 'Removed 23 duplicate rows' },
-      { time: '10:00:18', msg: 'Fixed 5 column data types' },
-      { time: '10:00:20', msg: 'Data cleaning completed' },
-    ],
-  },
-  {
-    id: 3, name: 'EDA Agent', status: 'running', progress: 67,
-    logs: [
-      { time: '10:00:21', msg: 'Starting exploratory data analysis' },
-      { time: '10:00:30', msg: 'Computing statistical summaries' },
-      { time: '10:00:45', msg: 'Generating distribution charts...' },
-    ],
-  },
-  { id: 4, name: 'Prediction Agent', status: 'queued', progress: 0, logs: [] },
-  { id: 5, name: 'Reporting Agent', status: 'queued', progress: 0, logs: [] },
+const INITIAL_AGENTS = [
+  { id: 1, key: 'ingestion', name: 'Data Collection Agent', status: 'queued', progress: 0, logs: [] },
+  { id: 2, key: 'cleaning', name: 'Data Cleaning Agent', status: 'queued', progress: 0, logs: [] },
+  { id: 3, key: 'eda', name: 'EDA Agent', status: 'queued', progress: 0, logs: [] },
+  { id: 4, key: 'prediction', name: 'Prediction Agent', status: 'queued', progress: 0, logs: [] },
+  { id: 5, key: 'reporting', name: 'Reporting Agent', status: 'queued', progress: 0, logs: [] },
 ];
-
-const overallProgress = 40;
 
 // Large circular progress
 const LargeCircularProgress = ({ value }: { value: number }) => {
@@ -73,10 +48,58 @@ const LargeCircularProgress = ({ value }: { value: number }) => {
 };
 
 const AgentMonitoring = () => {
-  const [expanded, setExpanded] = useState<number | null>(3);
+  const [searchParams] = useSearchParams();
+  const pipelineId = searchParams.get('job');
+  
+  const [agents, setAgents] = useState(INITIAL_AGENTS);
+  const [overallProgress, setOverallProgress] = useState(0);
+  const [expanded, setExpanded] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!pipelineId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`http://localhost:8000/api/v1/jobs/${pipelineId}`);
+        const data = await res.json();
+        
+        if (res.ok) {
+           const currentAgentKey = data.current_agent;
+           let foundActive = false;
+           let totalProgress = 0;
+           
+           const newAgents = INITIAL_AGENTS.map(agent => {
+              if (agent.key === currentAgentKey) {
+                 foundActive = true;
+                 totalProgress += (data.progress || 10) / 5; // each agent is 20%
+                 return { ...agent, status: data.status === 'error' ? 'error' : 'running', progress: data.progress, logs: [{time: new Date().toLocaleTimeString(), msg: `Running ${agent.name}...`}] };
+              }
+              if (!foundActive || data.status === 'completed') {
+                 // Already passed
+                 totalProgress += 20;
+                 return { ...agent, status: 'completed', progress: 100, logs: [{time: new Date().toLocaleTimeString(), msg: 'Completed successfully.'}] };
+              }
+              return agent;
+           });
+           
+           setAgents(newAgents as any);
+           setOverallProgress(Math.floor(totalProgress));
+           
+           if (data.status === 'completed' || data.status === 'error') {
+               clearInterval(interval);
+           }
+        }
+      } catch(e) {
+        console.error(e);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [pipelineId]);
 
   const statusIcon = (status: string) => {
     if (status === 'completed') return <CheckCircle className="w-5 h-5 text-success" />;
+    if (status === 'error') return <XCircle className="w-5 h-5 text-destructive" />;
     if (status === 'running') return <Loader2 className="w-5 h-5 text-primary animate-spin" />;
     return <Clock className="w-5 h-5 text-muted-foreground" />;
   };

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Upload, Database, FileSpreadsheet, Globe, Eye, Trash2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MagicCard from '@/components/magicui/MagicCard';
@@ -13,12 +14,7 @@ const connectors = [
   { name: 'REST API', desc: 'Connect to any REST endpoint', icon: Globe },
 ];
 
-const initialDatasets = [
-  { name: 'sales_2024.csv', size: '24.5 MB', shape: '15,420 × 12', status: 'Ready' },
-  { name: 'customers.xlsx', size: '12.1 MB', shape: '8,300 × 8', status: 'Ready' },
-  { name: 'inventory.json', size: '8.3 MB', shape: '5,100 × 15', status: 'Uploading' },
-  { name: 'revenue_q3.csv', size: '3.2 MB', shape: '2,400 × 6', status: 'Failed' },
-];
+const initialDatasets: any[] = [];
 
 function formatSize(bytes: number) {
   if (bytes < 1024) return bytes + ' B';
@@ -39,6 +35,24 @@ const DataSources = () => {
   const [progress, setProgress] = useState(0);
   const [datasets, setDatasets] = useState(initialDatasets);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetch("http://localhost:8000/api/v1/datasets")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.datasets) {
+          setDatasets(data.datasets.map((d: any) => ({
+            id: d.id,
+            name: d.original_filename,
+            size: formatSize(d.file_size),
+            shape: d.rows_count ? `${d.rows_count.toLocaleString()} × ${d.columns_count}` : 'Unknown',
+            status: d.status === 'ready' ? 'Processing' : 'Ready' // ingested status turns it ready
+          })));
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   const handleFile = useCallback((file: File) => {
     setSelectedFile(file);
@@ -65,36 +79,66 @@ const DataSources = () => {
     setProgress(0);
   }, []);
 
-  const startUpload = useCallback(() => {
+  const startUpload = useCallback(async () => {
     if (!selectedFile) return;
     setUploading(true);
     setProgress(0);
+    
+    // Fake progress interval while real upload happens
+    const int = setInterval(() => setProgress(p => Math.min(p + 15, 90)), 300);
+
+    try {
+      const fd = new FormData();
+      fd.append("file", selectedFile);
+      
+      const res = await fetch("http://localhost:8000/api/v1/datasets", {
+        method: "POST",
+        body: fd
+      });
+      const data = await res.json();
+      
+      clearInterval(int);
+      if (res.ok) {
+        setProgress(100);
+        setTimeout(() => {
+          setDatasets(d => [{
+            id: data.dataset_id,
+            name: selectedFile.name,
+            size: formatSize(selectedFile.size),
+            shape: 'Extracting...',
+            status: 'Processing'
+          }, ...d]);
+          setUploading(false);
+          setSelectedFile(null);
+        }, 500);
+      } else {
+        setUploading(false);
+        alert("Failed: " + data.detail);
+      }
+    } catch(err) {
+      clearInterval(int);
+      setUploading(false);
+      console.error(err);
+    }
   }, [selectedFile]);
 
-  useEffect(() => {
-    if (!uploading) return;
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setDatasets(d => [
-            ...d,
-            {
-              name: selectedFile!.name,
-              size: formatSize(selectedFile!.size),
-              shape: randomShape(),
-              status: 'Ready',
-            },
-          ]);
-          setSelectedFile(null);
-          setUploading(false);
-          return 100;
-        }
-        return prev + 5;
+  const handleRunPipeline = async (datasetId: string) => {
+    try {
+      const res = await fetch("http://localhost:8000/api/v1/jobs", {
+        method: "POST",
+        headers:{ "Content-Type": "application/json" },
+        body: JSON.stringify({ dataset_id: datasetId, task_type: "regression" })
       });
-    }, 100);
-    return () => clearInterval(interval);
-  }, [uploading, selectedFile]);
+      const data = await res.json();
+      if(res.ok) {
+         navigate(`/dashboard/agent-monitoring?job=${data.pipeline_id}`);
+      } else {
+         alert("Job failed to start: " + data.detail);
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -206,7 +250,7 @@ const DataSources = () => {
                     <td className="py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"><Eye className="w-4 h-4" /></button>
-                        <ShimmerButton className="text-xs px-3 py-1.5">Run Pipeline</ShimmerButton>
+                        <ShimmerButton onClick={() => handleRunPipeline(d.id)} className="text-xs px-3 py-1.5">Run Pipeline</ShimmerButton>
                         <button className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="w-4 h-4" /></button>
                       </div>
                     </td>

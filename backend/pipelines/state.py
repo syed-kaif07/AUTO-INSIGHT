@@ -11,6 +11,8 @@ class PipelineState(TypedDict, total=False):
     pipeline_id: str       # UUID of the pipelines row in Supabase
     user_id: str           # UUID of the owning user
     dataset_id: str        # UUID of the dataset row in Supabase
+    target_column: str     # User-selected column to predict
+    task_type: str         # "regression" | "classification"
 
     # ─── Data ────────────────────────────────────────────────────────────────
     dataset_url: str       # Supabase Storage public/signed URL of the raw file
